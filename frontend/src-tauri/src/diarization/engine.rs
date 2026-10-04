@@ -16,7 +16,7 @@ use tracing::{info, warn};
 use super::clustering::{cluster_embeddings, compute_centroid, nearest_centroid, cosine_similarity};
 
 /// Default cosine similarity threshold for auto-detecting speaker count.
-const DEFAULT_SIMILARITY_THRESHOLD: f32 = 0.30;
+const DEFAULT_SIMILARITY_THRESHOLD: f32 = 0.20;
 
 /// Duration (seconds) of the representative audio sample picked per speaker.
 const SPEAKER_SAMPLE_DURATION_SECS: f64 = 5.0;
@@ -55,7 +55,6 @@ pub struct SegmentInfo {
 /// segments, then clusters them with Agglomerative Hierarchical Clustering.
 pub struct DiarizationEngine {
     session: Session,
-    embedding_dim: usize,
 }
 
 impl DiarizationEngine {
@@ -67,16 +66,9 @@ impl DiarizationEngine {
             .commit_from_file(model_path)
             .context("Failed to load ONNX speaker embedding model")?;
 
-        // Pyannote speaker embedding uses 512 dimensions
-        let embedding_dim = 512;
-
-        info!(
-            "Speaker embedding model loaded (embedding dim: {})",
-            embedding_dim
-        );
+        info!("Speaker embedding model loaded dynamically.");
         Ok(Self {
             session,
-            embedding_dim,
         })
     }
 
@@ -88,16 +80,14 @@ impl DiarizationEngine {
 
         let num_samples = audio_16k.len();
 
-        // Create input tensor [1, num_samples]
-        let input_array =
-            ndarray::Array2::from_shape_vec((1, num_samples), audio_16k.to_vec())
-                .context("Failed to create input tensor")?;
-
-        let input_value = ort::value::TensorRef::from_array_view(input_array.view())?;
-        // Get output name before running the session to prevent overlapping borrows
         let output_name = self.session.outputs[0].name.clone();
 
-        let outputs = self.session.run(ort::inputs![input_value])?;
+        // Pyannote exported model expects 2D: [batch, samples]
+        let input_array_2d = ndarray::Array2::from_shape_vec((1, num_samples), audio_16k.to_vec())
+            .context("Failed to create 2D input tensor")?;
+        let input_value_2d = ort::value::TensorRef::from_array_view(input_array_2d.view())?;
+
+        let outputs = self.session.run(ort::inputs![input_value_2d])?;
 
         let embedding_tensor = outputs
             .get(output_name.as_str())
@@ -180,9 +170,14 @@ impl DiarizationEngine {
                 resample_audio(segment_audio, source_sample_rate, EMBEDDING_SAMPLE_RATE)?
             };
 
-            if let Ok(emb) = self.extract_embedding(&audio_16k) {
-                valid_embeddings.push(emb);
-                valid_indices.push(idx);
+            match self.extract_embedding(&audio_16k) {
+                Ok(emb) => {
+                    valid_embeddings.push(emb);
+                    valid_indices.push(idx);
+                }
+                Err(e) => {
+                    tracing::error!("Failed to extract embedding for segment {}: {:?}", idx, e);
+                }
             }
         }
 
@@ -270,20 +265,14 @@ impl DiarizationEngine {
 
             candidates.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
 
-            let (sample_start, sample_end) = if let Some(&(best_idx, duration, _)) = candidates.first() {
+            let (sample_start, sample_end) = if let Some(&(best_idx, _duration, _)) = candidates.first() {
                 let best_seg = &segments[best_idx];
-                if duration >= 5.0 {
-                    (best_seg.audio_start_time, best_seg.audio_start_time + 5.0)
-                } else {
-                    let center = (best_seg.audio_start_time + best_seg.audio_end_time) / 2.0;
-                    let start = (center - 2.5).max(0.0);
-                    let end = (start + 5.0).min(audio_duration as f64);
-                    (start, end)
-                }
+                // Clamp strictly to segment boundaries — never bleed into adjacent speakers
+                (best_seg.audio_start_time, best_seg.audio_end_time)
             } else {
                 let fallback_idx = seg_indices[seg_indices.len() / 2];
-                let start = segments[fallback_idx].audio_start_time;
-                (start, (start + 5.0).min(audio_duration as f64))
+                let seg = &segments[fallback_idx];
+                (seg.audio_start_time, seg.audio_end_time)
             };
 
             speakers.push(SpeakerInfo {
@@ -427,7 +416,7 @@ fn resample_audio(samples: &[f32], from_rate: u32, to_rate: u32) -> Result<Vec<f
 pub fn default_model_path(app_data_dir: &Path) -> PathBuf {
     app_data_dir
         .join("models")
-        .join("speaker_embedding.onnx")
+        .join("pyannote_model.onnx")
 }
 
 #[cfg(test)]

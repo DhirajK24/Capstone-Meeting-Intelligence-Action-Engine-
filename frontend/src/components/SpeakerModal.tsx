@@ -179,6 +179,8 @@ export function SpeakerModal({
     }
   };
 
+  const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
   const handlePlaySample = async (speaker: Speaker) => {
     if (playingLabel === speaker.internal_label) {
       // Already playing — do nothing (let it finish)
@@ -201,8 +203,21 @@ export function SpeakerModal({
       const source = ctx.createBufferSource();
       source.buffer = decoded;
       source.connect(ctx.destination);
+      
+      // Stop previous playback if any
+      if (activeSourceRef.current) {
+        activeSourceRef.current.stop();
+        activeSourceRef.current.disconnect();
+      }
+      activeSourceRef.current = source;
+      
       source.start();
-      source.onended = () => setPlayingLabel(null);
+      source.onended = () => {
+        if (activeSourceRef.current === source) {
+          setPlayingLabel(null);
+          activeSourceRef.current = null;
+        }
+      };
     } catch (err) {
       console.error('Failed to play sample:', err);
       setPlayingLabel(null);

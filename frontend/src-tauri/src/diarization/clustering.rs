@@ -77,8 +77,8 @@ pub fn cluster_embeddings(
             }
         }
 
-        // For auto-detection: stop if best similarity is below threshold AND we have 6 or fewer clusters
-        if num_speakers.is_none() && best_sim < threshold && num_active <= 6 {
+        // Auto-detect the number of speakers based purely on voice similarity!
+        if num_speakers.is_none() && best_sim < threshold {
             break;
         }
 

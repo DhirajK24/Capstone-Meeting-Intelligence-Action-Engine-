@@ -326,7 +326,7 @@ fn extract_audio_slice(
         .arg("-ss").arg(start_secs.to_string())
         .arg("-i").arg(audio_path)
         .arg("-t").arg(duration.to_string())
-        .arg("-ar").arg("44100")
+        .arg("-ar").arg("48000")
         .arg("-ac").arg("1")
         .arg("-c:a").arg("pcm_s16le")
         .arg("-f").arg("wav")
