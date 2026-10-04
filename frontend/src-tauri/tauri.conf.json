@@ -1,6 +1,6 @@
 {
     "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-    "productName": "meetily",
+    "productName": "MIA",
     "version": "0.4.1",
     "identifier": "com.meetily.ai",
     "build": {
@@ -12,7 +12,7 @@
     "app": {
         "windows": [
             {
-                "title": "meetily",
+                "title": "MIA",
                 "width": 1100,
                 "height": 700,
                 "resizable": true,
@@ -91,8 +91,8 @@
         "createUpdaterArtifacts": true,
         "icon": [
             "icons/icon.png",
-            "icons/app_icon.icns",
-            "icons/app_icon.ico"
+            "icons/icon.icns",
+            "icons/icon.ico"
         ],
         "resources": [
             "templates/*.json"

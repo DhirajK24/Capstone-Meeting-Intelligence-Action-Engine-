@@ -145,13 +145,7 @@ export default function AnalyticsConsentSwitch() {
     // Keep analytics enabled, no state change needed
   };
 
-  const handlePrivacyPolicyClick = async () => {
-    try {
-      await invoke('open_external_url', { url: 'https://github.com/Zackriya-Solutions/meeting-minutes/blob/main/PRIVACY_POLICY.md' });
-    } catch (error) {
-      console.error('Failed to open privacy policy link:', error);
-    }
-  };
+
 
   return (
     <>
@@ -226,12 +220,7 @@ export default function AnalyticsConsentSwitch() {
             <p className="mb-1">
               Your meetings, transcripts, and recordings remain completely private and local.
             </p>
-            <button
-              onClick={handlePrivacyPolicyClick}
-              className="text-blue-600 hover:text-blue-800 underline hover:no-underline"
-            >
-              View Privacy Policy
-            </button>
+
           </div>
         </div>
       </div>
