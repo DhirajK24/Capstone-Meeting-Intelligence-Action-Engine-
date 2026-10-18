@@ -1,106 +1,170 @@
 <div align="center" style="border-bottom: none">
     <h1>
-        <img src="docs/MIA%20Meeting%20Intelligence%20Dashboard.png" style="border-radius: 10px;" alt="MIA Banner" />
+        <img src="docs/MIA%20Meeting%20Intelligence%20Dashboard.png" style="border-radius: 12px; max-width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.12);" alt="MIA Banner" />
         <br>
         MIA - Meeting Intelligence & Action Engine
     </h1>
     <p>
-        <b>Turn every meeting into clear insights and real actions. Built entirely for your local machine.</b>
+        <b>Transform raw meeting conversations into structured intelligence, verified decisions, and personalized action items. Powered by 100% local, private AI.</b>
     </p>
+
+   [![Tauri v2](https://img.shields.io/badge/Tauri-v2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
+   [![Next.js 14](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+   [![Rust](https://img.shields.io/badge/Rust-1.77+-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+   [![Whisper](https://img.shields.io/badge/Whisper-Offline%20STT-brightgreen)](https://github.com/ggerganov/whisper.cpp)
+   [![Pyannote](https://img.shields.io/badge/Pyannote-Neural%20Diarization-blueviolet)](https://github.com/pyannote/pyannote-audio)
+   [![Local LLM](https://img.shields.io/badge/Local%20LLM-Ollama%20%7C%20Llama%203-blue)](https://ollama.ai/)
+   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 </div>
 
 ---
 
 ## 🚀 Introduction
 
-Welcome to **MIA (Meeting Intelligence & Action Engine)**! We built this application to solve a critical problem: taking meeting notes without compromising data privacy. 
+In today's fast-paced workplaces, valuable decisions and action items often get lost in hours of recorded conversations. Cloud-based meeting bots capture this data by routing sensitive audio through third-party servers, posing critical data privacy and security vulnerabilities for companies and individuals.
 
-Cloud-based meeting transcription tools send highly sensitive conversations to third-party servers, creating significant privacy risks. **MIA runs entirely locally on your machine.** It captures your meeting audio, transcribes it in real-time, and generates intelligent summaries—all without your audio ever leaving your device.
+**MIA (Meeting Intelligence & Action Engine)** is an enterprise-grade desktop application that runs **entirely on your local machine**. It records multi-source meeting audio, transcribes dialogue in real-time, clusters and fingerprints individual speakers, extracts decisions and action items using local LLMs, and dispatches personalized emails to each participant—all without your audio ever leaving your device.
 
-## 🛠️ How It Works
+---
 
-MIA operates in a seamless, three-step pipeline:
+## ✨ Key Features
 
-1. **Audio Capture**: Using cross-platform native APIs, MIA captures both your microphone input and system audio simultaneously. It intelligently mixes them with professional loudness normalization to prevent distortion.
-2. **Real-time Transcription**: The captured audio is streamed into our local AI transcription engine (Whisper or Parakeet). The speech is transcribed into text in real-time right before your eyes.
-3. **Speaker Diarization**: The captured audio is analyzed by a local neural network to distinguish between different speakers. It identifies participants, isolates audio samples, and assigns names directly to the transcript in a fully offline pipeline.
-4. **AI Summarization**: Once the meeting ends, the transcript is passed to a Large Language Model (LLM) which analyzes the text, extracts key action items, and formats a clean, comprehensive summary.
+### 🎙️ Dual-Stream Audio Capture
+- **Simultaneous Capture**: Simultaneously records your system output (meeting participants on Zoom, Teams, Google Meet) and your microphone input.
+- **Studio-Grade DSP**: Built-in EBU R128 loudness normalization and neural background noise suppression (`nnnoiseless`) to ensure crystal-clear transcription.
 
-## 🧠 Models & Libraries Used
+### ⚡ Offline Real-Time Speech-to-Text
+- **Zero-Cloud Transcription**: Powered by local `whisper.cpp` bindings and NVIDIA Parakeet ONNX models.
+- **Hardware Acceleration**: Automatic GPU acceleration via Apple Metal (macOS), CUDA (NVIDIA on Windows/Linux), and Vulkan.
 
-We engineered MIA using a modern, highly optimized technology stack to ensure it runs efficiently on consumer hardware.
+### 👥 Neural Speaker Diarization & Speaker Directory
+- **Local Clustering**: Uses Pyannote ONNX neural embeddings (512-dimensional vectors) executed through `ort` (ONNX Runtime) to isolate and fingerprint unique speakers without cloud APIs.
+- **Speaker Directory**: Maintain a global directory of team members, roles, and emails.
+- **Inline Reassignment**: Reassign names directly within the transcript with audio snippet playback and synced profile colors.
 
-### AI Models (Local & Cloud Options)
-* **Transcription Models**: 
-  * **Whisper** (by OpenAI): Integrated directly for highly accurate, offline speech-to-text.
-  * **Parakeet** (by NVIDIA): Converted to ONNX format for lightning-fast transcription.
-* **Speaker Diarization Models**:
-  * **Pyannote**: We use a highly optimized, 512-dimensional ONNX-based embedding model running via `ort` to uniquely cluster and fingerprint meeting participants with zero cloud dependencies.
-* **Summarization Models**:
-  * **Ollama (Local)**: We support connecting to your local Ollama instance for 100% offline, private summarization using models like Llama 3 or Mistral.
-  * **Cloud APIs**: Support for custom OpenAI endpoints, Claude, Groq, and OpenRouter for users who prefer cloud-powered summaries.
+### 🧠 Context-Aware AI Summarization
+- **100% Offline Intelligence**: Connect seamlessly to your local **Ollama** instance to run models like Llama 3, Mistral, and Qwen.
+- **Configurable Templates**: Built-in structured templates for Standard Meetings, Project Syncs, 1-on-1s, Client Calls, and Standups.
+- **Cloud Fallbacks**: Optional support for Claude, OpenAI, Groq, and OpenRouter for teams that choose cloud models.
 
-### Core Technology Stack
-* **App Framework**: **Tauri (v2)** - Allows us to build a lightweight, cross-platform desktop application using web technologies for the UI and Rust for the heavy lifting.
-* **Frontend**: 
-  * **Next.js 14** & **React 18**
-  * **TailwindCSS** & **Radix UI (shadcn/ui)** for a beautiful, responsive user interface.
-  * **BlockNote / Tiptap** for rich-text editing of meeting notes.
-* **Backend (Rust)**:
-  * `whisper-rs`: Rust bindings for whisper.cpp to run inference locally.
-  * `ort` (ONNX Runtime): Powers the fast execution of Parakeet models and the Pyannote speaker diarization engine.
-  * `cpal`: Handles cross-platform, low-level audio capture.
-  * `ffmpeg` / `symphonia`: Powers high-speed audio decoding, extraction, and slicing.
-  * `sqlx` (SQLite): Manages local database storage for your notes and settings.
-  * `ebur128` & `nnnoiseless`: Provides professional audio normalization and neural-network-based background noise suppression.
+### 📧 Intelligent Action Item & Context Email Dispatcher
+- **Personalized Task Delivery**: Dispatches individualized emails where each employee receives **only the specific action items assigned to them**, while maintaining full meeting context.
+- **Complete Context Included**: Automatically structures and renders the **Executive Summary**, **Key Decisions**, and **Discussion Highlights** into responsive HTML cards.
+- **Free Native SMTP & Resend**: Zero cost setup using your native Gmail (Google App Password), Outlook, custom SMTP server, or Resend API.
+- **Live Preview & Approval**: Interactive modal to review, approve, reassign tasks, and inspect the exact email before hitting send.
 
-## 💻 Installation & Development Guide
+### 📝 Notion-Style Meeting Notes Workspace
+- **BlockNote Editor**: Rich-text workspace supporting blocks, headers, interactive task tables, and real-time Markdown export.
+- **One-Click Clipboard**: Instant export of summaries, action item tables, and raw transcript segments.
 
-Want to build MIA from source? Follow these steps to get a local development environment running.
+---
+
+## 🛠️ Architecture & Pipeline
+
+MIA processes meeting data through a modular, local-first pipeline:
+
+```
+[System Audio + Mic]
+         │
+         ▼
+[Audio Normalization & DSP (EBU R128)]
+         │
+         ├───► [Local STT Engine (Whisper / Parakeet)] ───► Real-Time Transcript
+         │
+         └───► [Neural Diarization (Pyannote ONNX)] ─────► Speaker Clusters
+                                                                   │
+                                                                   ▼
+                                                       [Speaker Directory Link]
+                                                                   │
+                                                                   ▼
+[Meeting Document (BlockNote Editor)] ◄─── [Local LLM Summarization (Ollama)]
+         │
+         ├───► 🎯 Personalized Action Items
+         ├───► 📝 Executive Summary
+         ├───► 💡 Key Decisions
+         └───► 🔍 Discussion Highlights
+         │
+         ▼
+[Email Dispatcher (lettre SMTP / Resend)] ───► Team Inboxes
+```
+
+---
+
+## 🧠 Technology Stack
+
+### App Framework & UI
+- **Tauri v2**: High-performance, memory-efficient desktop shell combining Rust with modern web frontends.
+- **Next.js 14 & React 18**: Dynamic, responsive UI powered by React Server Components and Client State.
+- **Tailwind CSS & Radix UI (shadcn/ui)**: Clean, polished styling with accessible component primitives.
+- **BlockNote**: Notion-style rich-text editing experience built on Prosemirror.
+
+### High-Performance Rust Backend
+- **`whisper-rs`**: Zero-overhead Rust bindings for whisper.cpp.
+- **`ort` (ONNX Runtime)**: Native C++ execution of neural networks for Pyannote diarization and Parakeet STT.
+- **`cpal`**: Cross-platform low-latency native audio loopback and microphone capture.
+- **`lettre`**: Async SMTP transport supporting TLS authentication for direct email delivery.
+- **`sqlx` & SQLite**: Embedded, resilient local database storage for meetings, settings, and speaker directories.
+- **`ebur128` & `nnnoiseless`**: Real-time ITU-R BS.1770 loudness normalization and noise suppression.
+- **`ffmpeg` / `symphonia`**: Accelerated media extraction, audio slicing, and waveform processing.
+
+---
+
+## 💻 Installation & Quickstart
 
 ### Prerequisites
-Ensure you have the following installed on your machine:
+Make sure you have the following installed:
 * **Node.js** (v18+)
-* **pnpm** (Package manager)
+* **pnpm** (`npm install -g pnpm`)
 * **Rust** (v1.77+ with Cargo)
-* **Visual Studio Build Tools** (for Windows C++ compilation requirements)
+* **C++ Build Tools** (Visual Studio Build Tools on Windows, Xcode Command Line Tools on macOS)
+* **Ollama** *(Optional for local AI summaries)*: [Download Ollama](https://ollama.ai/) and run `ollama run llama3`.
 
 ### 1. Clone & Install Dependencies
-First, clone the repository and install the frontend dependencies.
 ```bash
-git clone https://github.com/DhirajK24/Capstone-Meeting-Intelligence-Action-Engine-.git MIA
+git clone https://github.com/DhirajK24/MIA-Meeting-Intelligence-Action-Engine.git MIA
 cd MIA/frontend
 pnpm install
 ```
 
 ### 2. Run the Development Server
-To launch the app in development mode with hot-reloading:
+Launch the application with live frontend hot-reloading and Rust background services:
 ```bash
 pnpm tauri:dev
 ```
-*(Note: Initial compilation of the Rust backend, especially the AI model bindings, may take several minutes.)*
+*(Note: Initial compilation of the Rust engine and native AI bindings may take a few minutes.)*
 
-### 3. Build for Production
-To create a standalone portable executable (`.exe`) that you can share with others, use the NSIS bundler to avoid global download timeouts:
+### 3. Build a Production Release
+To generate a standalone portable installer (`.exe` for Windows):
 ```bash
 pnpm tauri build --bundles nsis
 ```
-Once completed, your executable will be located in:
-`frontend/src-tauri/target/release/bundle/nsis/` (or run it directly from `target/release/MIA.exe`).
+The resulting executable will be created in `frontend/src-tauri/target/release/bundle/nsis/`.
+
+---
 
 ## ⚡ Hardware Acceleration
 
-MIA is designed to take advantage of your computer's GPU to speed up transcription. Depending on your system, the Rust backend is configured to automatically utilize:
-* **macOS**: Apple Metal & CoreML
-* **Windows**: CUDA (NVIDIA) or Vulkan (AMD/Intel)
+MIA automatically configures hardware acceleration depending on your operating system:
+* **Windows**: NVIDIA CUDA or Vulkan
+* **macOS**: Apple Metal & CoreML (Apple Silicon M1/M2/M3/M4 optimized)
 * **Linux**: CUDA or ROCm (HIP)
 
-*For optimal performance on Windows with an NVIDIA GPU, ensure the CUDA Toolkit is installed and build with `cargo build --release --features cuda`.*
+*For maximum transcription speed on Windows with an NVIDIA GPU, ensure the CUDA Toolkit is installed and compile with `--features cuda`:*
+```bash
+cargo build --release --features cuda
+```
 
-## 🔒 Privacy & Data Storage
+---
 
-All data generated by MIA stays strictly on your machine.
-* **Recordings**: Temporary audio files are saved locally and automatically cleaned up.
-* **Transcripts & Notes**: Stored securely in a local SQLite database in your system's AppData directory.
-* **Telemetry**: Zero telemetry, zero analytics tracking.
+## 🔒 Privacy & Local Security Guarantee
 
+MIA is built from the ground up on the principle of **absolute data sovereignty**:
+* **Audio Stays Local**: Audio streams are processed in memory and written strictly to temporary local files.
+* **Database Encrypted On-Disk**: Meeting records, transcripts, summaries, and directory entries reside solely in your local application directory.
+* **No Hidden Trackers**: Zero telemetry, zero analytics tracking, and zero remote logging.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
