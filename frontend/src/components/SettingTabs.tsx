@@ -1,7 +1,9 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+﻿import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ModelConfig, ModelSettingsModal } from "./ModelSettingsModal"
 import { TranscriptModelProps, TranscriptSettings } from "./TranscriptSettings"
-import { RecordingSettings, RecordingPreferences } from "./RecordingSettings"
+import { RecordingSettings } from "./RecordingSettings"
+import { SpeakerDirectorySettings } from "./SpeakerDirectorySettings"
+import { EmailSettingsModal } from "./EmailSettingsModal"
 import { About } from "./About";
 
 interface SettingTabsProps {
@@ -32,26 +34,32 @@ export function SettingTabs({
 
     return (
         <Tabs defaultValue={defaultTab} className="w-full max-h-[calc(100vh-10rem)] overflow-y-auto" onValueChange={handleTabChange}>
-  <TabsList>
+  <TabsList className="grid grid-cols-6 w-full mb-4">
     <TabsTrigger value="transcriptSettings">Transcript</TabsTrigger>
-    <TabsTrigger value="modelSettings">Ai Summary</TabsTrigger>
+    <TabsTrigger value="modelSettings">AI Summary</TabsTrigger>
+    <TabsTrigger value="speakerDirectory">Speakers & Team</TabsTrigger>
+    <TabsTrigger value="emailSettings">Email Setup</TabsTrigger>
     <TabsTrigger value="recordingSettings">Preferences</TabsTrigger>
     <TabsTrigger value="about">About</TabsTrigger>
   </TabsList>
   <TabsContent value="modelSettings">
     <ModelSettingsModal
-
-modelConfig={modelConfig}
-setModelConfig={setModelConfig}
-onSave={onSave}
-/>
+      modelConfig={modelConfig}
+      setModelConfig={setModelConfig}
+      onSave={onSave}
+    />
   </TabsContent>
-<TabsContent value="transcriptSettings">
+  <TabsContent value="transcriptSettings">
     <TranscriptSettings
-    transcriptModelConfig={transcriptModelConfig}
-    setTranscriptModelConfig={setTranscriptModelConfig}
-    // onSave={onSaveTranscript}
-  />
+      transcriptModelConfig={transcriptModelConfig}
+      setTranscriptModelConfig={setTranscriptModelConfig}
+    />
+  </TabsContent>
+  <TabsContent value="speakerDirectory">
+    <SpeakerDirectorySettings />
+  </TabsContent>
+  <TabsContent value="emailSettings">
+    <EmailSettingsModal />
   </TabsContent>
   <TabsContent value="recordingSettings">
     <RecordingSettings />
@@ -62,5 +70,3 @@ onSave={onSave}
 </Tabs>
     )
 }
-
-

@@ -1,4 +1,4 @@
-use crate::database::models::MeetingSpeaker;
+﻿use crate::database::models::MeetingSpeaker;
 use crate::database::repositories::speaker::SpeakerRepository;
 use crate::state::AppState;
 use std::path::PathBuf;
@@ -23,6 +23,12 @@ pub async fn re_run_diarization(
 
     let state = app.state::<AppState>();
     let pool = state.db_manager.pool().clone();
+
+    // 0. Ensure ONNX Runtime is available (checks if the bundled DLL loaded successfully)
+    crate::ensure_onnx_runtime_available().map_err(|e| {
+        error!("ONNX Runtime not available: {}", e);
+        format!("ONNX Runtime not available: {}. Please reinstall the application.", e)
+    })?;
 
     // 1. Get the meeting's folder path (where the WAV lives)
     let meeting = sqlx::query_as::<_, (String, Option<String>)>(
@@ -94,9 +100,56 @@ pub async fn re_run_diarization(
     let model_path = default_model_path(&app_data_dir);
 
     if !model_path.exists() {
-        let msg = format!("Speaker embedding model not found at {:?}. Please download it first.", model_path);
-        error!("{}", msg);
-        return Err(msg);
+        info!("Speaker embedding model not found at {:?}. Downloading automatically...", model_path);
+        
+        if let Some(parent) = model_path.parent() {
+            if let Err(e) = std::fs::create_dir_all(parent) {
+                error!("Failed to create models directory: {}", e);
+                return Err(format!("Failed to create models directory: {}", e));
+            }
+        }
+
+        let url = "https://huggingface.co/nevil-ramani/pyannote_embedding_onnx/resolve/main/pyannote_embedding.onnx?download=true";
+        let response = match reqwest::get(url).await {
+            Ok(resp) => resp,
+            Err(e) => {
+                error!("Failed to download model: {}", e);
+                return Err(format!("Failed to download model: {}", e));
+            }
+        };
+
+        if !response.status().is_success() {
+            let msg = format!("Failed to download model: HTTP {}", response.status());
+            error!("{}", msg);
+            return Err(msg);
+        }
+
+        let bytes = match response.bytes().await {
+            Ok(b) => b,
+            Err(e) => {
+                error!("Failed to read model bytes: {}", e);
+                return Err(format!("Failed to read model bytes: {}", e));
+            }
+        };
+
+        // Validate that the downloaded file is actually an ONNX model (not an HTML error page)
+        if bytes.len() < 1024 {
+            let preview = String::from_utf8_lossy(&bytes[..bytes.len().min(200)]);
+            error!("Downloaded model file is too small ({} bytes). Content: {}", bytes.len(), preview);
+            return Err(format!(
+                "Downloaded model appears invalid ({} bytes). Please check your internet connection and try again.",
+                bytes.len()
+            ));
+        }
+
+        info!("Downloaded model: {} bytes", bytes.len());
+
+        if let Err(e) = std::fs::write(&model_path, &bytes) {
+            error!("Failed to save model: {}", e);
+            return Err(format!("Failed to save model: {}", e));
+        }
+
+        info!("Model successfully downloaded and saved to {:?} ({} bytes)", model_path, bytes.len());
     }
 
     // 4. Run diarization on a blocking thread
@@ -121,7 +174,17 @@ pub async fn re_run_diarization(
         format!("Diarization failed: {}", e)
     })?;
 
-    // 5. Save results to database
+    // 5. Check for empty results and surface a meaningful error
+    if diarization_result.speakers.is_empty() {
+        warn!("Diarization completed but found 0 speakers for meeting '{}'", meeting_id);
+        return Err(
+            "No speakers could be identified. The recording may be too short or the audio quality too low.".to_string()
+        );
+    }
+
+    info!("Diarization found {} speakers for meeting '{}'", diarization_result.speakers.len(), meeting_id);
+
+    // 6. Save results to database
     let speakers_to_save: Vec<MeetingSpeaker> = diarization_result
         .speakers
         .iter()
@@ -130,6 +193,7 @@ pub async fn re_run_diarization(
             meeting_id: meeting_id.clone(),
             internal_label: s.internal_label.clone(),
             custom_name: None,
+            email: None,
             sample_start_time: s.sample_start_time,
             sample_end_time: s.sample_end_time,
             segment_count: s.segment_count as i64,
@@ -340,3 +404,4 @@ fn extract_audio_slice(
 
     Ok(output.stdout)
 }
+

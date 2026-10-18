@@ -1,0 +1,63 @@
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.wave {
+  position: absolute;
+  inset: -6%;
+  background: white url('/images/home-wave.png') center / cover no-repeat;
+  transform-origin: 50% 60%;
+  animation: flow 16s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+  will-change: transform;
+}
+
+.paused .wave {
+  animation-play-state: paused;
+}
+
+/* Overscan keeps the edges covered throughout the slow, elastic sway. */
+@keyframes flow {
+  0%, 100% {
+    transform: translate3d(-1.4%, 0.8%, 0) scale(1.02, 1.01) skewY(-1deg);
+  }
+  50% {
+    transform: translate3d(1.4%, -0.8%, 0) scale(1.045, 1.055) skewY(1deg);
+  }
+}
+
+.toggle {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 90%);
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .toggle:hover { background: #eff6ff; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave {
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
+  .toggle { display: none; }
+}

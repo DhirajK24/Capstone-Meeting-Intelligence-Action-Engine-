@@ -1,12 +1,23 @@
-export interface Speaker {
+﻿export interface Speaker {
   id: string;
   meeting_id: string;
   internal_label: string;   // "Speaker 1", "Speaker 2", etc.
-  custom_name: string | null; // User-assigned name, e.g., "hitesh"
+  custom_name: string | null; // User-assigned name, e.g., "Raj"
+  email?: string | null;      // Optional email address for task delivery
   sample_start_time: number;  // Seconds into the WAV for representative sample
   sample_end_time: number;
   segment_count: number;      // How many transcript segments belong to this speaker
   created_at: string;
+}
+
+export interface SpeakerDirectoryEntry {
+  id: string;
+  name: string;
+  email?: string | null;
+  role?: string | null;
+  voice_sample_path?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Returns the best display name for a speaker */

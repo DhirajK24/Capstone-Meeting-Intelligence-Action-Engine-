@@ -476,7 +476,8 @@ const Sidebar: React.FC = () => {
               <button
                 onClick={handleRecordingToggle}
                 disabled={isRecording}
-                className={`p-2 ${isRecording ? 'bg-red-500 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'} rounded-full transition-colors duration-150 shadow-sm`}
+                aria-label={isRecording ? 'Recording in progress' : 'Start recording'}
+                className="ruby-record-button p-2 rounded-full"
               >
                 {isRecording ? (
                   <Square className="w-5 h-5 text-white" />
@@ -777,7 +778,7 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleRecordingToggle}
               disabled={isRecording}
-              className={`w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-white ${isRecording ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'} rounded-lg transition-colors shadow-sm`}
+              className="ruby-record-button w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-white rounded-lg"
             >
               {isRecording ? (
                 <>

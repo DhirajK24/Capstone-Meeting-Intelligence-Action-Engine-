@@ -55,6 +55,7 @@ openmp = ["whisper-rs/openmp"]     # OpenMP parallel processing
 [build-dependencies]
 tauri-build = { version = "2.3.0", features = [] }
 reqwest = { version = "0.11", features = ["blocking", "multipart", "json", "stream"] }
+lettre = { version = "0.11", default-features = false, features = ["tokio1-native-tls", "smtp-transport", "builder"] }
 which = "6.0.1"
 zip = "2.2"           # ZIP extraction (Windows, macOS)
 tar = "0.4"           # TAR extraction (Linux)
@@ -113,6 +114,7 @@ tokio-util = "0.7"  # Utilities for tokio including CancellationToken
 async-trait = "0.1"  # Trait abstraction for async methods
 
 reqwest = { version = "0.11", features = ["blocking", "multipart", "json", "stream"] }
+lettre = { version = "0.11", default-features = false, features = ["tokio1-native-tls", "smtp-transport", "builder"] }
 
 # crossbeam
 crossbeam = "0.8.4"
@@ -212,3 +214,4 @@ tracing-subscriber = "0.3.16"
 [patch.crates-io]
 cpal = { git = "https://github.com/RustAudio/cpal", rev = "51c3b43" }
 esaxx-rs = { git = "https://github.com/thewh1teagle/esaxx-rs.git", branch = "feat/dynamic-msvc-link" }
+

@@ -6,6 +6,9 @@ import { EmptyStateSummary } from '@/components/EmptyStateSummary';
 import { ModelConfig } from '@/components/ModelSettingsModal';
 import { SummaryGeneratorButtonGroup } from './SummaryGeneratorButtonGroup';
 import { SummaryUpdaterButtonGroup } from './SummaryUpdaterButtonGroup';
+import { SendTasksModal } from './SendTasksModal';
+import { Speaker } from '@/types/speaker';
+import { invoke } from '@tauri-apps/api/core';
 import Analytics from '@/lib/analytics';
 import { useEffect, useRef, useState, RefObject } from 'react';
 import { toast } from 'sonner';
@@ -88,6 +91,35 @@ export function SummaryPanel({
   const [summaryLang, setSummaryLang] = useState<string | null>(null);
   const [summaryLangStorage, setSummaryLangStorage] = useState<SummaryLanguageStorage>('metadata');
   const [langPickerOpen, setLangPickerOpen] = useState(false);
+  const [sendTasksModalOpen, setSendTasksModalOpen] = useState(false);
+  const [meetingSpeakers, setMeetingSpeakers] = useState<Speaker[]>([]);
+
+  const [summaryMarkdown, setSummaryMarkdown] = useState<string>('');
+
+  const handleOpenSendTasks = async () => {
+    try {
+      const spks = await invoke<Speaker[]>('get_speakers', { meetingId: meeting.id });
+      setMeetingSpeakers(spks);
+    } catch (e) {
+      console.error('Failed to fetch meeting speakers:', e);
+    }
+
+    try {
+      if (summaryRef.current?.getMarkdown) {
+        const md = await summaryRef.current.getMarkdown();
+        setSummaryMarkdown(md || (aiSummary as any)?.markdown || '');
+      } else if ((aiSummary as any)?.markdown) {
+        setSummaryMarkdown((aiSummary as any).markdown);
+      }
+    } catch (e) {
+      console.error('Failed to get markdown for tasks:', e);
+      if ((aiSummary as any)?.markdown) {
+        setSummaryMarkdown((aiSummary as any).markdown);
+      }
+    }
+
+    setSendTasksModalOpen(true);
+  };
   const languageLoadVersionRef = useRef(0);
   const activeMeetingIdRef = useRef(meeting.id);
   const languageSaveVersionRef = useRef(0);
@@ -243,7 +275,7 @@ export function SummaryPanel({
 
   return (
     <div className="flex-1 min-w-0 flex flex-col bg-white overflow-hidden h-full w-full @container">
-      {/* Top-level actions — always visible, same pattern as TranscriptPanel */}
+      {/* Top-level actions â€” always visible, same pattern as TranscriptPanel */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-center w-full min-w-0 gap-2 flex-wrap">
           <div className="flex-shrink-0 min-w-0">
@@ -273,6 +305,7 @@ export function SummaryPanel({
                 isDirty={isSummaryDirty}
                 onSave={onSaveAll}
                 onCopy={onCopySummary}
+                onSendTasks={handleOpenSendTasks}
               />
             </div>
           )}
@@ -325,6 +358,36 @@ export function SummaryPanel({
           )}
         </div>
       )}
+      <SendTasksModal
+        open={sendTasksModalOpen}
+        onOpenChange={setSendTasksModalOpen}
+        meetingTitle={meetingTitle}
+        meetingDate={meeting.created_at}
+        initialTasks={
+          Array.isArray((aiSummary as any)?.action_items)
+            ? (aiSummary as any).action_items
+            : Array.isArray((aiSummary as any)?.summary?.action_items)
+            ? (aiSummary as any).summary.action_items
+            : []
+        }
+        keyPoints={
+          Array.isArray((aiSummary as any)?.key_points)
+            ? (aiSummary as any).key_points
+            : Array.isArray((aiSummary as any)?.summary?.key_points)
+            ? (aiSummary as any).summary.key_points
+            : []
+        }
+        summaryText={
+          typeof (aiSummary as any)?.raw_summary === 'string'
+            ? (aiSummary as any).raw_summary
+            : typeof (aiSummary as any)?.summary === 'string'
+            ? (aiSummary as any).summary
+            : ''
+        }
+        speakers={meetingSpeakers}
+        markdownContent={summaryMarkdown}
+      />
     </div>
   );
 }
+

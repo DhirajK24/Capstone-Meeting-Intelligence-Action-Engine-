@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Settings2, Mic, Database as DatabaseIcon, SparkleIcon, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Settings2, Mic, Database as DatabaseIcon, SparkleIcon, FlaskConical, Mail, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { invoke } from '@tauri-apps/api/core';
 import { motion } from 'framer-motion';
@@ -10,12 +10,16 @@ import { RecordingSettings } from '@/components/RecordingSettings';
 import { PreferenceSettings } from '@/components/PreferenceSettings';
 import { SummaryModelSettings } from '@/components/SummaryModelSettings';
 import { BetaSettings } from '@/components/BetaSettings';
+import { EmailSettingsModal } from '@/components/EmailSettingsModal';
+import { SpeakerDirectorySettings } from '@/components/SpeakerDirectorySettings';
 import { useConfig } from '@/contexts/ConfigContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Tabs configuration (constant)
 const TABS = [
   { value: 'general', label: 'General', icon: Settings2 },
+  { value: 'email', label: 'Email Setup', icon: Mail },
+  { value: 'speakers', label: 'Speakers & Team', icon: Users },
   { value: 'recording', label: 'Recordings', icon: Mic },
   { value: 'Transcriptionmodels', label: 'Transcription', icon: DatabaseIcon },
   { value: 'summaryModels', label: 'Summary', icon: SparkleIcon },
@@ -111,6 +115,12 @@ export default function SettingsPage() {
 
             <TabsContent value="general">
               <PreferenceSettings />
+            </TabsContent>
+            <TabsContent value="email" className="mt-6">
+              <EmailSettingsModal />
+            </TabsContent>
+            <TabsContent value="speakers" className="mt-6">
+              <SpeakerDirectorySettings />
             </TabsContent>
             <TabsContent value="recording">
               <RecordingSettings />

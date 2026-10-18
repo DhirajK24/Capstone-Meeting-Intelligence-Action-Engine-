@@ -2,6 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Shared ruby finish: only the fill rotates, never the recording icon. */
+.ruby-record-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #ba1630;
+  box-shadow: 0 5px 10px #9d132b2b, 0 1px 2px #770b2133;
+  transition: transform 160ms cubic-bezier(.23, 1, .32, 1);
+}
+
+.ruby-record-button::before {
+  content: '';
+  position: absolute;
+  width: 150%;
+  aspect-ratio: 1;
+  left: -25%;
+  top: 50%;
+  z-index: -2;
+  pointer-events: none;
+  background: conic-gradient(from 30deg, #970c24, #d01b34 22%, #ff5a61 40%, #ef3043 55%, #b81230 80%, #970c24);
+  animation: ruby-record-orbit 6s linear infinite;
+}
+
+.ruby-record-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 35% 8%, #ffffff36, transparent 48%), linear-gradient(180deg, transparent 65%, #59091b24);
+  box-shadow: inset 0 1px 1px #ffffff80, inset 0 -1px 2px #69091f33;
+}
+
+@keyframes ruby-record-orbit {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.ruby-record-button:disabled {
+  background: #9ca3af;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.ruby-record-button:disabled::before,
+.ruby-record-button:disabled::after {
+  opacity: 0;
+  animation-play-state: paused;
+}
+
+body:has([data-mia-motion-paused='true']) .ruby-record-button::before {
+  animation-play-state: paused;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ruby-record-button:not(:disabled):hover {
+    transform: translateY(-2px) scale(1.035);
+  }
+}
+
+.ruby-record-button:not(:disabled):active { transform: scale(.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ruby-record-button::before { animation: none; transform: translateY(-50%); }
+  .ruby-record-button { transition: none; }
+  .ruby-record-button:not(:disabled):hover,
+  .ruby-record-button:not(:disabled):active { transform: none; }
+}
+
 @keyframes vibrate {
   0% {
     transform: translate(0);

@@ -2,14 +2,15 @@ import { VirtualizedTranscriptView } from '@/components/VirtualizedTranscriptVie
 import { PermissionWarning } from '@/components/PermissionWarning';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { Copy, GlobeIcon } from 'lucide-react';
+import { Copy, GlobeIcon, Pause, Play } from 'lucide-react';
 import { useTranscripts } from '@/contexts/TranscriptContext';
 import { useConfig } from '@/contexts/ConfigContext';
 import { useRecordingState } from '@/contexts/RecordingStateContext';
 import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 import { ModalType } from '@/hooks/useModalState';
 import { useIsLinux } from '@/hooks/usePlatform';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import waveStyles from './WelcomeWave.module.css';
 
 /**
  * TranscriptPanel Component
@@ -36,6 +37,8 @@ export function TranscriptPanel({
   const { isRecording, isPaused } = useRecordingState();
   const { checkPermissions, isChecking, hasSystemAudio, hasMicrophone } = usePermissionCheck();
   const isLinux = useIsLinux();
+  const [wavePaused, setWavePaused] = useState(false);
+  const showWelcomeWave = transcripts.length === 0 && !isRecording && !isProcessingStop && !isStopping;
 
   // Convert transcripts to segments for virtualized view
   const segments = useMemo(() =>
@@ -50,7 +53,28 @@ export function TranscriptPanel({
   );
 
   return (
-    <div ref={transcriptContainerRef} className="w-full border-r border-gray-200 bg-white flex flex-col overflow-y-auto">
+    <div
+      ref={transcriptContainerRef}
+      data-mia-motion-paused={showWelcomeWave && wavePaused ? 'true' : undefined}
+      className="relative isolate w-full border-r border-gray-200 bg-white flex flex-col overflow-y-auto"
+    >
+      {showWelcomeWave && (
+        <>
+          <div aria-hidden="true" className={`${waveStyles.scene} ${wavePaused ? waveStyles.paused : ''}`}>
+            <div className={waveStyles.wave} />
+          </div>
+          <button
+            type="button"
+            className={waveStyles.toggle}
+            onClick={() => setWavePaused(paused => !paused)}
+            aria-label={wavePaused ? 'Resume decorative animations' : 'Pause decorative animations'}
+            aria-pressed={wavePaused}
+          >
+            {wavePaused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
+            {wavePaused ? 'Resume motion' : 'Pause motion'}
+          </button>
+        </>
+      )}
       {/* Title area - Sticky header */}
       <div className="sticky top-0 z-10 bg-white p-4 border-gray-200">
         <div className="flex flex-col space-y-3">
@@ -102,7 +126,7 @@ export function TranscriptPanel({
       )}
 
       {/* Transcript content */}
-      <div className="pb-20">
+      <div className={showWelcomeWave ? 'pb-20 pt-[clamp(0rem,5vh,3rem)]' : 'pb-20'}>
         <div className="flex justify-center">
           <div className="w-2/3 max-w-[750px]">
             <VirtualizedTranscriptView

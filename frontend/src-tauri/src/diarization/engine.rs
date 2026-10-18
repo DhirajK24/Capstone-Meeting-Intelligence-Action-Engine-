@@ -136,11 +136,11 @@ impl DiarizationEngine {
             num_speakers
         );
 
-        // 1. Load the full WAV file
-        let (all_samples, source_sample_rate) = load_wav_mono(wav_path)?;
+        // 1. Load the full audio file (supports WAV, MP4, M4A, MP3, etc.)
+        let (all_samples, source_sample_rate) = load_audio_mono(wav_path)?;
         let audio_duration = all_samples.len() as f32 / source_sample_rate as f32;
         info!(
-            "Loaded WAV: {} samples at {} Hz ({:.1}s)",
+            "Loaded audio: {} samples at {} Hz ({:.1}s)",
             all_samples.len(),
             source_sample_rate,
             audio_duration
@@ -149,18 +149,24 @@ impl DiarizationEngine {
         // 2. Extract embeddings for each valid segment
         let mut valid_embeddings = Vec::new();
         let mut valid_indices = Vec::new();
+        let mut skipped_short = 0usize;
+        let mut skipped_oob = 0usize;
+        let mut failed_extraction = 0usize;
 
         for (idx, seg) in segments.iter().enumerate() {
             let start_sample = (seg.audio_start_time * source_sample_rate as f64) as usize;
             let end_sample = (seg.audio_end_time * source_sample_rate as f64) as usize;
 
             if start_sample >= all_samples.len() || end_sample > all_samples.len() {
-                warn!("Segment {} out of bounds, skipping", seg.transcript_id);
+                warn!("Segment {} out of bounds (start={}, end={}, total={}), skipping",
+                    seg.transcript_id, start_sample, end_sample, all_samples.len());
+                skipped_oob += 1;
                 continue;
             }
 
             let segment_audio = &all_samples[start_sample..end_sample];
             if segment_audio.len() < 400 {
+                skipped_short += 1;
                 continue;
             }
 
@@ -176,13 +182,24 @@ impl DiarizationEngine {
                     valid_indices.push(idx);
                 }
                 Err(e) => {
+                    failed_extraction += 1;
                     tracing::error!("Failed to extract embedding for segment {}: {:?}", idx, e);
                 }
             }
         }
 
+        info!(
+            "Embedding extraction: {}/{} succeeded, {} failed, {} skipped (too short), {} skipped (out of bounds)",
+            valid_embeddings.len(), segments.len(), failed_extraction, skipped_short, skipped_oob
+        );
+
         if valid_embeddings.is_empty() {
-            return Ok(DiarizationResult { speakers: vec![], assignments: vec![] });
+            return Err(anyhow!(
+                "All {} segments failed embedding extraction (0 valid). \
+                 {} failed, {} too short, {} out of bounds. \
+                 Check that the ONNX model file is valid and the audio file is readable.",
+                segments.len(), failed_extraction, skipped_short, skipped_oob
+            ));
         }
 
         // 3. Two-pass Clustering setup
@@ -287,13 +304,17 @@ impl DiarizationEngine {
     }
 }
 
-/// Load a WAV file as mono f32 samples and return (samples, sample_rate).
-fn load_wav_mono(path: &Path) -> Result<(Vec<f32>, u32)> {
-    let file = std::fs::File::open(path).context("Failed to open WAV file")?;
+/// Load an audio file as mono f32 samples and return (samples, sample_rate).
+/// Supports WAV, MP4, M4A, MP3, FLAC, OGG, and WebM via Symphonia.
+fn load_audio_mono(path: &Path) -> Result<(Vec<f32>, u32)> {
+    info!("Loading audio from {:?}", path);
+    let file = std::fs::File::open(path).context("Failed to open audio file")?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
     let mut hint = Hint::new();
-    hint.with_extension("wav");
+    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+        hint.with_extension(ext);
+    }
 
     let probed = symphonia::default::get_probe()
         .format(

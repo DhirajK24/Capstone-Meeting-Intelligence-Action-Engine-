@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+﻿use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex as StdMutex;
 // Removed unused import
@@ -44,6 +44,7 @@ pub mod config;
 pub mod console_utils;
 pub mod database;
 pub mod diarization;
+pub mod email;
 pub mod notifications;
 pub mod ollama;
 pub mod onboarding;
@@ -147,9 +148,9 @@ async fn start_recording<R: Runtime>(
     system_device_name: Option<String>,
     meeting_name: Option<String>,
 ) -> Result<(), String> {
-    log_info!("🔥 CALLED start_recording with meeting: {:?}", meeting_name);
+    log_info!("ðŸ”¥ CALLED start_recording with meeting: {:?}", meeting_name);
     log_info!(
-        "📋 Backend received parameters - mic: {:?}, system: {:?}, meeting: {:?}",
+        "ðŸ“‹ Backend received parameters - mic: {:?}, system: {:?}, meeting: {:?}",
         mic_device_name,
         system_device_name,
         meeting_name
@@ -370,7 +371,7 @@ async fn start_recording_with_devices_and_meeting<R: Runtime>(
     system_device_name: Option<String>,
     meeting_name: Option<String>,
 ) -> Result<(), String> {
-    log_info!("🚀 CALLED start_recording_with_devices_and_meeting - Mic: {:?}, System: {:?}, Meeting: {:?}",
+    log_info!("ðŸš€ CALLED start_recording_with_devices_and_meeting - Mic: {:?}, System: {:?}, Meeting: {:?}",
              mic_device_name, system_device_name, meeting_name);
 
     // Clone meeting_name for notification use later
@@ -839,6 +840,15 @@ pub fn run() {
             diarization::commands::update_speaker_name,
             diarization::commands::merge_speakers,
             diarization::commands::play_speaker_sample,
+            // Email and Speaker Directory commands
+            email::commands::get_email_settings,
+            email::commands::save_email_settings,
+            email::commands::send_test_email,
+            email::commands::send_meeting_tasks_email,
+            email::commands::get_speaker_directory,
+            email::commands::save_speaker_to_directory,
+            email::commands::delete_speaker_from_directory,
+            email::commands::update_meeting_speaker_email,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -875,3 +885,4 @@ pub fn run() {
             }
         });
 }
+

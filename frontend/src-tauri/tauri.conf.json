@@ -88,15 +88,17 @@
             "app",
             "dmg"
         ],
-        "createUpdaterArtifacts": true,
+        "createUpdaterArtifacts": false,
         "icon": [
             "icons/icon.png",
             "icons/icon.icns",
             "icons/icon.ico"
         ],
-        "resources": [
-            "templates/*.json"
-        ],
+        "resources": {
+            "templates/*.json": "templates",
+            "binaries/onnxruntime/onnxruntime.dll": "onnxruntime.dll",
+            "binaries/onnxruntime/onnxruntime_providers_shared.dll": "onnxruntime_providers_shared.dll"
+        },
         "externalBin": [
             "binaries/llama-helper",
             "binaries/ffmpeg"

@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
+﻿use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
@@ -46,6 +46,7 @@ pub struct MeetingSpeaker {
     pub meeting_id: String,
     pub internal_label: String,
     pub custom_name: Option<String>,
+    pub email: Option<String>,
     pub sample_start_time: f64,
     pub sample_end_time: f64,
     pub segment_count: i64,
@@ -144,3 +145,32 @@ pub struct TranscriptSetting {
     #[serde(rename = "openaiApiKey")]
     pub openai_api_key: Option<String>,
 }
+
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct SpeakerDirectoryEntry {
+    pub id: String,
+    pub name: String,
+    pub email: Option<String>,
+    pub role: Option<String>,
+    pub voice_sample_path: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct EmailSettings {
+    pub id: String,
+    pub provider: String,
+    pub smtp_host: Option<String>,
+    pub smtp_port: Option<i64>,
+    pub smtp_username: Option<String>,
+    pub smtp_password: Option<String>,
+    pub smtp_use_tls: Option<i64>,
+    pub from_name: Option<String>,
+    pub from_email: Option<String>,
+    pub resend_api_key: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+

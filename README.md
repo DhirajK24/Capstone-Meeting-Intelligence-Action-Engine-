@@ -68,8 +68,8 @@ Ensure you have the following installed on your machine:
 ### 1. Clone & Install Dependencies
 First, clone the repository and install the frontend dependencies.
 ```bash
-git clone https://github.com/DhirajK24/Capstone-Meeting-Intelligence-Action-Engine-.git meetily
-cd meetily/frontend
+git clone https://github.com/DhirajK24/Capstone-Meeting-Intelligence-Action-Engine-.git MIA
+cd MIA/frontend
 pnpm install
 ```
 
@@ -86,7 +86,7 @@ To create a standalone portable executable (`.exe`) that you can share with othe
 pnpm tauri build --bundles nsis
 ```
 Once completed, your executable will be located in:
-`frontend/src-tauri/target/release/bundle/nsis/` (or run it directly from `target/release/meetily.exe`).
+`frontend/src-tauri/target/release/bundle/nsis/` (or run it directly from `target/release/MIA.exe`).
 
 ## ⚡ Hardware Acceleration
 

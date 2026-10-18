@@ -1,4 +1,4 @@
-use crate::database::models::MeetingSpeaker;
+﻿use crate::database::models::MeetingSpeaker;
 use chrono::Utc;
 use sqlx::{Error as SqlxError, SqlitePool, Acquire};
 use tracing::{error, info};
@@ -28,13 +28,14 @@ impl SpeakerRepository {
         for speaker in speakers {
             let id = format!("speaker-{}", Uuid::new_v4());
             sqlx::query(
-                "INSERT INTO meeting_speakers (id, meeting_id, internal_label, custom_name, sample_start_time, sample_end_time, segment_count, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO meeting_speakers (id, meeting_id, internal_label, custom_name, email, sample_start_time, sample_end_time, segment_count, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             )
             .bind(&id)
             .bind(meeting_id)
             .bind(&speaker.internal_label)
             .bind(&speaker.custom_name)
+            .bind(&speaker.email)
             .bind(speaker.sample_start_time)
             .bind(speaker.sample_end_time)
             .bind(speaker.segment_count)
@@ -59,7 +60,7 @@ impl SpeakerRepository {
         meeting_id: &str,
     ) -> Result<Vec<MeetingSpeaker>, SqlxError> {
         let speakers = sqlx::query_as::<_, MeetingSpeaker>(
-            "SELECT id, meeting_id, internal_label, custom_name, sample_start_time, sample_end_time, segment_count, created_at
+            "SELECT id, meeting_id, internal_label, custom_name, email, sample_start_time, sample_end_time, segment_count, created_at
              FROM meeting_speakers
              WHERE meeting_id = ?
              ORDER BY internal_label ASC",
@@ -71,17 +72,19 @@ impl SpeakerRepository {
         Ok(speakers)
     }
 
-    /// Updates the custom display name for a speaker.
-    pub async fn update_speaker_name(
+    /// Updates the custom display name and optional email for a speaker.
+    pub async fn update_speaker_details(
         pool: &SqlitePool,
         meeting_id: &str,
         internal_label: &str,
         custom_name: &str,
+        email: Option<&str>,
     ) -> Result<(), SqlxError> {
         let result = sqlx::query(
-            "UPDATE meeting_speakers SET custom_name = ? WHERE meeting_id = ? AND internal_label = ?",
+            "UPDATE meeting_speakers SET custom_name = ?, email = ? WHERE meeting_id = ? AND internal_label = ?",
         )
         .bind(custom_name)
+        .bind(email)
         .bind(meeting_id)
         .bind(internal_label)
         .execute(pool)
@@ -94,17 +97,25 @@ impl SpeakerRepository {
             );
         } else {
             info!(
-                "Updated speaker '{}' -> '{}' in meeting '{}'",
-                internal_label, custom_name, meeting_id
+                "Updated speaker '{}' -> '{}' ({:?}) in meeting '{}'",
+                internal_label, custom_name, email, meeting_id
             );
         }
 
         Ok(())
     }
 
+    /// Updates the custom display name for a speaker (backwards compatibility).
+    pub async fn update_speaker_name(
+        pool: &SqlitePool,
+        meeting_id: &str,
+        internal_label: &str,
+        custom_name: &str,
+    ) -> Result<(), SqlxError> {
+        Self::update_speaker_details(pool, meeting_id, internal_label, custom_name, None).await
+    }
+
     /// Merges speaker `label_b` into `label_a`.
-    /// All transcript rows referencing `label_b` are reassigned to `label_a`,
-    /// and the `label_b` row is deleted from `meeting_speakers`.
     pub async fn merge_speakers(
         pool: &SqlitePool,
         meeting_id: &str,
